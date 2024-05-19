@@ -17,7 +17,6 @@ jobs:
           curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc > /dev/null
           echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
           sudo apt-get update && sudo apt-get install ngrok
-          sudo systemctl start sshd
 
       - name: Add SSH key
         run: |
@@ -29,7 +28,7 @@ jobs:
         run: |
           sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
           sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
-          sudo systemctl restart sshd
+          sudo systemctl start sshd
 
       - name: Start ngrok to expose SSH
         run: |
@@ -39,9 +38,6 @@ jobs:
       - name: Get ngrok public URL
         run: |
           sleep 10
-          echo 'NGROK LOGS UNTIL NOW:'
-          cat ngrok.log
-          echo 'API TUNNELS RESULT:'
           curl -s http://localhost:4040/api/tunnels
           NGROK_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
           echo "NGROK_URL=$NGROK_URL" >> $GITHUB_ENV
