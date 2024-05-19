@@ -1,0 +1,30 @@
+name: SSH Access to GitHub Actions Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ssh-access:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+
+      - name: Install SSH server
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openssh-server
+          sudo systemctl start ssh
+
+      - name: Add SSH key
+        run: |
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" >> ~/.ssh/authorized_keys
+
+      - name: Print SSH access instructions
+        run: |
+          echo "Run the following command to connect:"
+          echo "ssh -i ./github_actions_key -o 'StrictHostKeyChecking=no' runner@$(curl -s ifconfig.me)"
+
+      - name: Keep the job running
+        run: sleep 21600 # Keep the job running for 6 hours
+
