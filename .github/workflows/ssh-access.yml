@@ -24,7 +24,7 @@ jobs:
 
       - name: Install Telebit
         run: |
-          npm install -g telebit
+          curl -fsSL https://get.telebit.io/ | bash
           telebit tcp 22 --name github-actions-ssh --email ${{ secrets.TELEBIT_EMAIL }} &
 
       - name: Get Telebit public URL
