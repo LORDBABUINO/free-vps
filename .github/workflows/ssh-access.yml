@@ -1,4 +1,4 @@
-name: SSH Access to GitHub Actions Runner
+name: SSH Access to GitHub Actions Runner via Telebit
 
 on:
   workflow_dispatch:
@@ -10,45 +10,36 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v2
 
-      - name: Install SSH server and ngrok
+      - name: Install SSH server
         run: |
           sudo apt-get update
           sudo apt-get install -y openssh-server
-          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | sudo tee /etc/apt/trusted.gpg.d/ngrok.asc > /dev/null
-          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | sudo tee /etc/apt/sources.list.d/ngrok.list
-          sudo apt-get update && sudo apt-get install ngrok
 
       - name: Add SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PUBLIC_KEY }}" >> ~/.ssh/authorized_keys
           chmod 600 ~/.ssh/authorized_keys
-
-      - name: Configure SSHD
-        run: |
-          sudo sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-          sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
           sudo systemctl start sshd
 
-      - name: Start ngrok to expose SSH
+      - name: Install Telebit
         run: |
-          ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-          nohup ngrok tcp 22 --log=stdout > ngrok.log &
+          curl -fsSL https://get.telebit.io/ | bash
+          telebit tcp 22 --name github-actions-ssh --email ${{ secrets.TELEBIT_EMAIL }} &
 
-      - name: Get ngrok public URL
+      - name: Get Telebit public URL
         run: |
           sleep 10
-          curl -s http://localhost:4040/api/tunnels
-          NGROK_URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
-          echo "NGROK_URL=$NGROK_URL" >> $GITHUB_ENV
+          TELEBIT_URL=$(telebit url)
+          echo "TELEBIT_URL=$TELEBIT_URL" >> $GITHUB_ENV
 
       - name: Print SSH access instructions
         run: |
-          NGROK_URL=$(echo ${{ env.NGROK_URL }} | awk -F'//' '{print $2}')
-          NGROK_HOST=$(echo $NGROK_URL | awk -F':' '{print $1}')
-          NGROK_PORT=$(echo $NGROK_URL | awk -F':' '{print $2}')
+          echo "Telebit URL: ${{ env.TELEBIT_URL }}"
+          TELEBIT_HOST=$(echo ${{ env.TELEBIT_URL }} | awk -F'//' '{print $2}' | awk -F':' '{print $1}')
+          TELEBIT_PORT=$(echo ${{ env.TELEBIT_URL }} | awk -F':' '{print $2}')
           echo "Run the following command to connect:"
-          echo "ssh -i ./id_rsa.github_vps -o 'StrictHostKeyChecking=no' -p $NGROK_PORT runner@$NGROK_HOST"
+          echo "ssh -i ./id_rsa.github_vps -o 'StrictHostKeyChecking=no' -p $TELEBIT_PORT runner@$TELEBIT_HOST"
 
       - name: Keep the job running
         run: sleep 21600 # Keep the job running for 6 hours
