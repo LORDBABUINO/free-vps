@@ -25,10 +25,7 @@ jobs:
       - name: Install Telebit
         run: |
           npm install -g telebit
-          mkdir -p ~/.config/telebit/
-          echo '{ "email": "${{ secrets.TELEBIT_EMAIL }}" }' > ~/.config/telebit/telebit.json
-          cat ~/.config/telebit/telebit.json
-          telebit --config ~/.config/telebit/telebit.json tcp 22
+          telebit tcp 22 --name github-actions-ssh --email ${{ secrets.TELEBIT_EMAIL }} &
 
       - name: Get Telebit public URL
         run: |
