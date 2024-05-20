@@ -26,7 +26,12 @@ jobs:
         run: |
           npm install -g telebit
           mkdir -p ~/.config/telebit/
-          echo '{ "email": "${{ secrets.TELEBIT_EMAIL }}" }' > ~/.config/telebit/telebit.json
+          echo '{
+            "email": "${{ secrets.TELEBIT_EMAIL }}",
+            "agree": true,
+            "token": "",
+            "relay": "telebit.cloud"
+          }' > ~/.config/telebit/telebit.json
           cat ~/.config/telebit/telebit.json
           telebit --config ~/.config/telebit/telebit.json tcp 22
 
